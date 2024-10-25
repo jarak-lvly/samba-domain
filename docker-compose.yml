@@ -1,0 +1,61 @@
+services:
+  samba_dc:
+    image: samba-domain:v1.1
+    container_name: my_sambadc
+    privileged: true
+    restart: unless-stopped
+    environment:
+      - DOMAIN=MIDTOWN.LOCAL
+      - DOMAIN_DC=dc=midtown,dc=local
+      - DOMAIN_EMAIL=midtown.local
+      - DOMAINPASS=Your_password_goes_here
+      - JOIN=true
+      - DNSFORWARDER=172.29.48.5
+      - HOSTIP=172.29.48.11
+    ports:
+      - "172.29.48.11:53:53"
+      - "172.29.48.11:53:53/udp"
+      - "172.29.48.11:88:88"
+      - "172.29.48.11:88:88/udp"
+      - "172.29.48.11:123:123"
+      - "172.29.48.11:123:123/udp"
+      - "172.29.48.11:135:135"
+      - "172.29.48.11:137-138:137-138/udp"
+      - "172.29.48.11:139:139"
+      - "172.29.48.11:389:389"
+      - "172.29.48.11:389:389/udp"
+      - "172.29.48.11:445:445"
+      - "172.29.48.11:464:464"
+      - "172.29.48.11:464:464/udp"
+      - "172.29.48.11:636:636"
+      - "172.29.48.11:1024-1044:1024-1044"
+      - "172.29.48.11:3268-3269:3268-3269"
+      - "172.29.48.11:49152-49172:49152-49172"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /data/docker/containers/samba/data/:/var/lib/samba
+      - /data/docker/containers/samba/config/samba:/etc/samba/external
+    dns:
+      - 172.29.48.5
+      - 172.29.48.11
+    dns_search:
+      - midtown.local
+    dns_opt:
+      - ndots:1
+    extra_hosts:
+      - "dc01.midtown.local:172.29.48.11"
+    hostname: dc01
+    networks:
+      ipvlan_net:
+        ipv4_address: 172.29.48.11
+
+networks:
+  ipvlan_net:
+    driver: ipvlan
+    ipam:
+      config:
+        - subnet: 172.29.48.0/24
+          gateway: 172.29.48.1
+          ip_range: 172.29.48.10/31
+    driver_opts:
+      parent: eth0
