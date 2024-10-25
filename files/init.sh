@@ -119,6 +119,7 @@ appSetup () {
     fi
 
     # Set up winbind offline logon / pam_winbind cached login
+    # Note the winbind options added during domain join
     if [[ ! -f /etc/security/pam_winbind.conf ]]; then
         cp files/pam_winbind.conf /etc/security/pam_winbind.conf
     else
