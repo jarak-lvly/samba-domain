@@ -1,6 +1,6 @@
-# Samba Active Directory Domain Controller for Docker
-
 Forked from https://github.com/Fmstrat/samba-domain  
+
+# Samba Active Directory Domain Controller for Docker
   
 A well documented, tried and tested Samba Active Directory Domain Controller that works with the standard Windows management tools; built from scratch using internal DNS and kerberos and not based on existing containers.
   
@@ -12,8 +12,8 @@ Latest documentation available at: [https://nowsci.com/samba-domain/](https://no
 
 ## Additional Information
 
-I needed to customize for our environment:  JOINING a Samba DC into an existing Windows AD Domain (functional level 2016).
-For this subnet, there are Windows 11 nodes and one linux (app) server.  This set up was for proof of concept before rolling out to production.  
+Customize for our test environment:  JOINING a Samba DC into an existing Windows AD Domain (functional level 2016).
+For this subnet, there are Windows 11 nodes and one linux (app) server.  This set up was for proof of concept.   
   
 Read the documentation at nowsci.com.  I've pretty much left things in the files/scripts as is.  I modified what I needed to for my env and commented out the bits I didn't use.
 
@@ -50,5 +50,5 @@ and maybe these if you need them:
 loginShell  
 unixHomeDirectory  
 
-Our production AD already has these unix attributes set, but in the test lab they weren't.  I had to stop samba, clear out the cache and then restart samba in order for the samba DC uid/gids to match what was in Win AD.  
+Test lab AD did not have these unix attributes set.  I had to stop samba, clear out the cache and then restart samba in order for the samba DC uid/gids to match what was in Win AD.  
 
