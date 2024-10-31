@@ -52,3 +52,5 @@ unixHomeDirectory
 
 Test lab AD did not have these unix attributes set.  I had to stop samba, clear out the cache and then restart samba in order for the samba DC uid/gids to match what was in Win AD.  
 
+### Remember  
+Remove "privileged: true" and "DOMAINPASS=Your_password_goes_here" from docker-compose.yml after joining to the AD Domain.  
