@@ -57,7 +57,7 @@ appSetup () {
     if [[ ! -d /var/lib/samba/private ]]; then
         mkdir /var/lib/samba/private
     else
-        echo "already exists /var/lib/private"
+        echo "Directory /var/lib/private already exists"
     fi
 
     if [[ ! -f /etc/samba/external/smb.conf ]]; then
@@ -141,7 +141,7 @@ appSetup () {
     if [[ ! -d /var/run/supervisor ]] ; then
         mkdir /var/run/supervisor
     else
-        echo "/var/run/supervisor already exists"
+        echo "Directory /var/run/supervisor already exists"
     fi
 
     # Set up supervisor and double check default path of supervisord.conf
@@ -149,19 +149,12 @@ appSetup () {
         cp -p /etc/supervisor/supervisord.conf /etc/supervisor/supervisord.conf.orig
         sed -i '/^\[supervisord\]$/a nodaemon=true' /etc/supervisor/supervisord.conf
         sed -i 's|/var/run|/var/run/supervisor|g' /etc/supervisor/supervisord.conf
-        sed -i 's|chmod=0700|chmod=0777|' /etc/supervisor/supervisord.conf
         echo "[program:ntpd]" >> /etc/supervisor/conf.d/samba_supervisord.conf
         echo "command=/usr/sbin/ntpd -c /etc/ntpsec/ntp.conf -n" >> /etc/supervisor/conf.d/samba_supervisord.conf
         echo "[program:samba]" >> /etc/supervisor/conf.d/samba_supervisord.conf
         echo "command=/usr/sbin/samba -i" >> /etc/supervisor/conf.d/samba_supervisord.conf
     else
-        echo "[supervisord]" > /etc/supervisor/conf.d/supervisord.conf
-        echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
-        echo "" >> /etc/supervisor/conf.d/supervisord.conf
-        echo "[program:ntpd]" >> /etc/supervisor/conf.d/supervisord.conf
-        echo "command=/usr/sbin/ntpd -c /etc/ntpsec/ntp.conf -n" >> /etc/supervisor/conf.d/supervisord.conf
-        echo "[program:samba]" >> /etc/supervisor/conf.d/supervisord.conf
-        echo "command=/usr/sbin/samba -i" >> /etc/supervisor/conf.d/supervisord.conf
+        echo "Supervisor mods already exist"
     fi
 
     if [[ ${MULTISITE,,} == "true" ]]; then
@@ -185,7 +178,7 @@ appSetup () {
         mkdir /var/log/ntpsec
         chown ntpsec:ntpsec /var/log/ntpsec
     else
-        echo "/var/log/ntpsec already exists"
+        echo "Directory /var/log/ntpsec already exists"
     fi
 
     appStart ${FIRSTRUN}
@@ -198,7 +191,7 @@ fixDomainUsersGroup () {
         echo "dn: CN=Domain Users,CN=Users,${DOMAIN_DC}
 changetype: modify
 add: gidNumber
-gidNumber: 2000" | ldbmodify -H /var/lib/samba/private/sam.ldb
+gidNumber: 20000" | ldbmodify -H /var/lib/samba/private/sam.ldb
         net cache flush
     fi
 }
@@ -244,7 +237,7 @@ appStart () {
     if [ "${1}" = "true" ]; then
         #echo "Sleeping 10 before checking on Domain Users of gid 3000000 and setting up sshPublicKey"
         echo "Sleeping 10 before checking on Domain Users of gid 20000"
-        sleep 10
+        sleep 15
         fixDomainUsersGroup
         # we are not storing SSH keys in AD so comment out
         # setupSSH
