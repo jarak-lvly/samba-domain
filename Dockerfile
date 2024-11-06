@@ -10,6 +10,8 @@ RUN \
         pkg-config \
         attr \
         acl \
+        file \
+        dos2unix \
         samba \
         samba-ad-dc \
         samba-common \
@@ -24,7 +26,7 @@ RUN \
         supervisor \
         openvpn \
         ldb-tools \
-        vim \
+        vim-tiny \
         curl \
         dnsutils \
         iproute2 \

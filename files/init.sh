@@ -51,6 +51,15 @@ appSetup () {
     # Set up samba
     # If the finished file isn't there, this is brand new, we're not just moving to a new container
     FIRSTRUN=false
+
+    # For some reason /var/lib/samba/private is not there so check first
+    # If it is not there you might get an error e.g. : "Failed to open /var/lib/samba/private/secrets.tdb"
+    if [[ ! -d /var/lib/samba/private ]]; then
+        mkdir /var/lib/samba/private
+    else
+        echo "already exists /var/lib/private"
+    fi
+
     if [[ ! -f /etc/samba/external/smb.conf ]]; then
         FIRSTRUN=true
         mv /etc/samba/smb.conf /etc/samba/smb.conf.orig
@@ -128,15 +137,33 @@ appSetup () {
         sed -i "s/^;krb5_ccache_type =.*/krb5_ccache_type = FILE/" /etc/security/pam_winbind.conf
     fi
 
+    # Create dir for socket
+    if [[ ! -d /var/run/supervisor ]] ; then
+        mkdir /var/run/supervisor
+    else
+        echo "/var/run/supervisor already exists"
+    fi
 
-    # Set up supervisor
-    echo "[supervisord]" > /etc/supervisor/conf.d/supervisord.conf
-    echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
-    echo "" >> /etc/supervisor/conf.d/supervisord.conf
-    echo "[program:ntpd]" >> /etc/supervisor/conf.d/supervisord.conf
-    echo "command=/usr/sbin/ntpd -c /etc/ntpd.conf -n" >> /etc/supervisor/conf.d/supervisord.conf
-    echo "[program:samba]" >> /etc/supervisor/conf.d/supervisord.conf
-    echo "command=/usr/sbin/samba -i" >> /etc/supervisor/conf.d/supervisord.conf
+    # Set up supervisor and double check default path of supervisord.conf
+    if [[ ! -f /etc/supervisor/supervisord.conf.orig ]] ; then
+        cp -p /etc/supervisor/supervisord.conf /etc/supervisor/supervisord.conf.orig
+        sed -i '/^\[supervisord\]$/a nodaemon=true' /etc/supervisor/supervisord.conf
+        sed -i 's|/var/run|/var/run/supervisor|g' /etc/supervisor/supervisord.conf
+        sed -i 's|chmod=0700|chmod=0777|' /etc/supervisor/supervisord.conf
+        echo "[program:ntpd]" >> /etc/supervisor/conf.d/samba_supervisord.conf
+        echo "command=/usr/sbin/ntpd -c /etc/ntpsec/ntp.conf -n" >> /etc/supervisor/conf.d/samba_supervisord.conf
+        echo "[program:samba]" >> /etc/supervisor/conf.d/samba_supervisord.conf
+        echo "command=/usr/sbin/samba -i" >> /etc/supervisor/conf.d/samba_supervisord.conf
+    else
+        echo "[supervisord]" > /etc/supervisor/conf.d/supervisord.conf
+        echo "nodaemon=true" >> /etc/supervisor/conf.d/supervisord.conf
+        echo "" >> /etc/supervisor/conf.d/supervisord.conf
+        echo "[program:ntpd]" >> /etc/supervisor/conf.d/supervisord.conf
+        echo "command=/usr/sbin/ntpd -c /etc/ntpsec/ntp.conf -n" >> /etc/supervisor/conf.d/supervisord.conf
+        echo "[program:samba]" >> /etc/supervisor/conf.d/supervisord.conf
+        echo "command=/usr/sbin/samba -i" >> /etc/supervisor/conf.d/supervisord.conf
+    fi
+
     if [[ ${MULTISITE,,} == "true" ]]; then
         if [[ -n $VPNPID ]]; then
             kill $VPNPID
@@ -146,20 +173,20 @@ appSetup () {
         echo "command=/usr/sbin/openvpn --config /docker.ovpn" >> /etc/supervisor/conf.d/supervisord.conf
     fi
 
-    echo "server 127.127.1.0" > /etc/ntpd.conf
-    echo "fudge  127.127.1.0 stratum 10" >> /etc/ntpd.conf
-    echo "server 0.pool.ntp.org     iburst prefer" >> /etc/ntpd.conf
-    echo "server 1.pool.ntp.org     iburst prefer" >> /etc/ntpd.conf
-    echo "server 2.pool.ntp.org     iburst prefer" >> /etc/ntpd.conf
-    echo "driftfile       /var/lib/ntp/ntp.drift" >> /etc/ntpd.conf
-    echo "logfile         /var/log/ntp" >> /etc/ntpd.conf
-    echo "ntpsigndsocket  /usr/local/samba/var/lib/ntp_signd/" >> /etc/ntpd.conf
-    echo "restrict default kod nomodify notrap nopeer mssntp" >> /etc/ntpd.conf
-    echo "restrict 127.0.0.1" >> /etc/ntpd.conf
-    echo "restrict 0.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
-    echo "restrict 1.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
-    echo "restrict 2.pool.ntp.org   mask 255.255.255.255    nomodify notrap nopeer noquery" >> /etc/ntpd.conf
-    echo "tinker panic 0" >> /etc/ntpd.conf
+    # Set up ntp config
+    echo "" >> /etc/ntpsec/ntp.conf
+    echo "# Additional" >> /etc/ntpsec/ntp.conf
+    echo "ntpsigndsocket  /usr/local/samba/var/lib/ntp_signd/" >> /etc/ntpsec/ntp.conf
+    echo "restrict 172.29.48.0 mask 255.255.255.0 nomodify" >> /etc/ntpsec/ntp.conf
+    sed -i 's/\bnopeer\b//g' /etc/ntpsec/ntp.conf
+
+    # Temp fix for this bug
+    if [[ ! -d /var/log/ntpsec ]] ; then
+        mkdir /var/log/ntpsec
+        chown ntpsec:ntpsec /var/log/ntpsec
+    else
+        echo "/var/log/ntpsec already exists"
+    fi
 
     appStart ${FIRSTRUN}
 }
@@ -171,7 +198,7 @@ fixDomainUsersGroup () {
         echo "dn: CN=Domain Users,CN=Users,${DOMAIN_DC}
 changetype: modify
 add: gidNumber
-gidNumber: 20000" | ldbmodify -H /var/lib/samba/private/sam.ldb
+gidNumber: 2000" | ldbmodify -H /var/lib/samba/private/sam.ldb
         net cache flush
     fi
 }
@@ -212,7 +239,8 @@ schemaIDGUID:: +8nFQ43rpkWTOgbCCcSkqA==" > /tmp/Sshpubkey.class.ldif
 }
 
 appStart () {
-    /usr/bin/supervisord > /var/log/supervisor/supervisor.log 2>&1 &
+    /usr/bin/supervisord -c /etc/supervisor/supervisord.conf > /var/log/supervisor/supervisor.log 2>&1 &
+
     if [ "${1}" = "true" ]; then
         #echo "Sleeping 10 before checking on Domain Users of gid 3000000 and setting up sshPublicKey"
         echo "Sleeping 10 before checking on Domain Users of gid 20000"
