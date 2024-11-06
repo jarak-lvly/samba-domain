@@ -51,4 +51,4 @@ loginShell
 unixHomeDirectory  
 
 Test lab AD did not have these unix attributes set.  I had to stop samba, clear out the cache and then restart samba in order for the samba DC uid/gids to match what was in Win AD.  
-
+Some cfg files were in a different location e.g. Ubuntu; please double check path location.
