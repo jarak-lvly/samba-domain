@@ -56,6 +56,6 @@ networks:
       config:
         - subnet: 172.29.48.0/24
           gateway: 172.29.48.1
-          ip_range: 172.29.48.10/31
+          ip_range: 172.29.48.8/29
     driver_opts:
       parent: eth0
