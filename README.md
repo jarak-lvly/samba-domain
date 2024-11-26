@@ -53,5 +53,5 @@ unixHomeDirectory
 Test lab AD did not have these unix attributes set.  I had to stop samba, clear out the cache and then restart samba in order for the samba DC uid/gids to match what was in Win AD.  
 Some cfg files were in a different location e.g. Ubuntu; please double check path location.
 
-Notes
+Notes:  
 The samba_docker-compose.yml (in the samba-server repo) is for bringing up both the Samba DC and server (two different containers) on the same docker network.
